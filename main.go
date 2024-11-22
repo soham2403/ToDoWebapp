@@ -3,9 +3,11 @@ package main
 import (
 	"fmt"
 	"log"
+	"os"
 	"strconv"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/joho/godotenv"
 )
 
 type ToDo struct {
@@ -14,46 +16,83 @@ type ToDo struct {
 	Body      string `json:"body"`
 }
 
+var ToDos []ToDo
+
+func validateTodoId(id string) (int, error) {
+	idInt, err := strconv.Atoi(id)
+	if err != nil {
+		return 0, fmt.Errorf("invalid id")
+	}
+	if idInt <= 0 || idInt > len(ToDos) {
+		return 0, fmt.Errorf("%s out of bound", id)
+	}
+	return idInt - 1, nil
+}
+
+func getTodos(c *fiber.Ctx) error {
+	return c.Status(200).JSON(ToDos)
+}
+
+func createTodo(c *fiber.Ctx) error {
+	todo := &ToDo{}
+
+	if err := c.BodyParser(todo); err != nil {
+		return err
+	}
+
+	if todo.Body == "" {
+		return c.Status(400).JSON(fiber.Map{"err": "body field is required."})
+	}
+
+	todo.Id = len(ToDos) + 1
+	ToDos = append(ToDos, *todo)
+	return c.Status(201).JSON(todo)
+}
+
+func toggleTodo(c *fiber.Ctx) error {
+	id := c.Params("id")
+	index, err := validateTodoId(id)
+	if err != nil {
+		return c.Status(400).JSON(fiber.Map{"err": err.Error()})
+	}
+
+	ToDos[index].Completed = !ToDos[index].Completed
+	return c.Status(201).JSON(ToDos[index])
+}
+
+func deleteTodo(c *fiber.Ctx) error {
+	id := c.Params("id")
+	index, err := validateTodoId(id)
+	if err != nil {
+		return c.Status(400).JSON(fiber.Map{"err": err.Error()})
+	}
+
+	deletedTodo := ToDos[index]
+	//use to change but didnt change index here.
+	ToDos = append(ToDos[:index], ToDos[index+1:]...)
+
+	//used to change the index.
+	for i := range ToDos {
+		ToDos[i].Id = i + 1
+	}
+
+	return c.Status(200).JSON(deletedTodo)
+}
+
 func main() {
 	fmt.Println("hello world")
 	app := fiber.New()
-	ToDos := []ToDo{}
-	app.Get("/", func(c *fiber.Ctx) error {
-		return c.Status(200).JSON(fiber.Map{"msg": "hello world"})
-	})
-	// create a todo endpoint
-	app.Post("/api/todos", func(c *fiber.Ctx) error {
-		todo := &ToDo{}
+	err := godotenv.Load(".env")
+	if err != nil {
+		log.Fatal("error while loading .env file")
+	}
 
-		if err := c.BodyParser(todo); err != nil {
-			return err
-		}
+	PORT := os.Getenv("PORT")
 
-		if todo.Body == "" {
-			return c.Status(400).JSON(fiber.Map{"err": "body field is required."})
-		}
+	app.Get("/api/todos", getTodos)
+	app.Post("/api/todos", createTodo)
+	app.Patch("/api/todos/:id", toggleTodo)
+	app.Delete("/api/todos/delete/:id", deleteTodo)
 
-		todo.Id = len(ToDos) + 1
-		ToDos = append(ToDos, *todo)
-		return c.Status(201).JSON(todo)
-	})
-	// list of all tasks
-	//toggle method
-	app.Patch("/api/todos/:id", func(c *fiber.Ctx) error {
-		id := c.Params("id")
-		idInt, err := strconv.Atoi(id)
-		if err != nil {
-			return c.Status(400).JSON(fiber.Map{"err": "invalid id"})
-		}
-
-		if idInt <= 0 || idInt > len(ToDos) {
-			return c.Status(400).JSON(fiber.Map{"err": id + " out of bound"})
-		}
-		idInt--
-		completedTask := ToDos[idInt]
-		fmt.Println(completedTask)
-		completedTask.Completed = !completedTask.Completed
-		return c.Status(201).JSON(fiber.Map{"msg": id + " toggled"})
-	})
-	log.Fatal(app.Listen(":4000"))
+	log.Fatal(app.Listen(":" + PORT))
 }
