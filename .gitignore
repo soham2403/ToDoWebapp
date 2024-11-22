@@ -1,0 +1,73 @@
+# Node.js
+/node_modules
+/.pnp
+.pnp.js
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Build Output
+/build
+/dist
+/out
+
+# React
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env
+*.env
+
+# TypeScript
+*.tsbuildinfo
+
+# IDE and Editor Files
+.vscode/
+.idea/
+*.swp
+*.swo
+*.DS_Store
+*.log
+*.iml
+
+# Coverage Reports
+/coverage
+*.lcov
+coverage-final.json
+
+# Generated Files
+/public/static/
+**/node_modules/*
+**/.cache/
+
+# Go
+/bin/
+**/*.exe
+**/*.test
+/go.sum
+/go.mod
+
+# System Files
+Thumbs.db
+.DS_Store
+*.bak
+*.tmp
+*.swp
+
+# Temp files
+tmp/
+*.log
+*.pid
+
+# Go Build Artifacts
+*.exe
+*.out
+*.cgo
+*.o
+*.a
+
+# Git-specific files
+*.orig
