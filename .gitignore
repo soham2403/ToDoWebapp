@@ -48,7 +48,6 @@ coverage-final.json
 **/*.exe
 **/*.test
 /go.sum
-/go.mod
 
 # System Files
 Thumbs.db
